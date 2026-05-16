@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: notes-app-service
+  namespace: default
+  labels:
+    app: notes-app
+spec:
+  type: LoadBalancer                   # GKE'de external IP atar
+  selector:
+    app: notes-app                     # Deployment'taki pod'ları seçer
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80                         # Dışarıdan gelen port
+      targetPort: 3000                 # Pod içindeki port
+  sessionAffinity: None
