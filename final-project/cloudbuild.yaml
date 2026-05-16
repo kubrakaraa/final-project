@@ -1,0 +1,142 @@
+# cloudbuild.yaml
+# Google Cloud Build CI/CD Pipeline
+# Tetikleyici: main branch'e push yapıldığında otomatik çalışır
+#
+# Gereksinimler:
+#   gcloud config set project YOUR_PROJECT_ID
+
+substitutions:
+  _IMAGE_NAME: gcr.io/$PROJECT_ID/notes-app
+  _CLUSTER_NAME: notes-cluster
+  _CLUSTER_ZONE: us-central1-a
+  _APP_VERSION: v2                     # Her deploy'da manuel artır ya da $SHORT_SHA kullan
+
+steps:
+  # ── Adım 1: Docker imajını build et ─────────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-image'
+    args:
+      - 'build'
+      - '-t'
+      - '${_IMAGE_NAME}:${SHORT_SHA}'  # commit hash ile tag
+      - '-t'
+      - '${_IMAGE_NAME}:latest'
+      - '.'
+    waitFor: ['-']                     # Hemen başla
+
+  # ── Adım 2: Basit test (health endpoint) ────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'test-image'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker run -d --name test-container -p 3001:3000 ${_IMAGE_NAME}:${SHORT_SHA}
+        sleep 5
+        docker exec test-container wget -qO- http://localhost:3000/health
+        docker stop test-container && docker rm test-container
+    waitFor: ['build-image']
+
+  # ── Adım 3: İmajı Artifact Registry'ye push et ──────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-image'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_IMAGE_NAME}'
+    waitFor: ['test-image']
+
+  # ── Adım 4: GKE cluster'a bağlan ────────────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'get-credentials'
+    args:
+      - 'container'
+      - 'clusters'
+      - 'get-credentials'
+      - '${_CLUSTER_NAME}'
+      - '--zone'
+      - '${_CLUSTER_ZONE}'
+      - '--project'
+      - '$PROJECT_ID'
+    waitFor: ['push-image']
+
+  # ── Adım 5: PV ve PVC'yi uygula ────────────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'apply-storage'
+    args:
+      - 'apply'
+      - '-f'
+      - 'k8s/pv.yaml'
+      - '-f'
+      - 'k8s/pvc.yaml'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=${_CLUSTER_ZONE}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+    waitFor: ['get-credentials']
+
+  # ── Adım 6: NetworkPolicy uygula ───────────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'apply-netpol'
+    args:
+      - 'apply'
+      - '-f'
+      - 'k8s/networkpolicy.yaml'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=${_CLUSTER_ZONE}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+    waitFor: ['apply-storage']
+
+  # ── Adım 7: Deployment'ı güncelle (Rolling Update) ─────────────────────────
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'deploy'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Deployment ve Service'i uygula
+        kubectl apply -f k8s/deployment.yaml
+        kubectl apply -f k8s/service.yaml
+
+        # İmajı yeni SHA ile güncelle (rolling update tetikler)
+        kubectl set image deployment/notes-app \
+          notes-app=${_IMAGE_NAME}:${SHORT_SHA}
+
+        # Güncellemenin tamamlanmasını bekle (max 5 dakika)
+        kubectl rollout status deployment/notes-app --timeout=300s
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=${_CLUSTER_ZONE}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+    waitFor: ['apply-netpol']
+
+  # ── Adım 8: Deploy sonrası doğrulama ───────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'verify'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Pod Durumu ==="
+        kubectl get pods -l app=notes-app
+        echo "=== Service Durumu ==="
+        kubectl get service notes-app-service
+        echo "=== HPA Durumu ==="
+        kubectl get hpa notes-app-hpa
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=${_CLUSTER_ZONE}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+    waitFor: ['deploy']
+
+# Build imajını kayıt et
+images:
+  - '${_IMAGE_NAME}:${SHORT_SHA}'
+  - '${_IMAGE_NAME}:latest'
+
+# Build logları için
+logsBucket: 'gs://$PROJECT_ID-build-logs'
+
+options:
+  logging: GCS_ONLY
+  machineType: 'E2_HIGHCPU_8'
+
+# Maksimum build süresi: 20 dakika
+timeout: '1200s'

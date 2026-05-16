@@ -1,0 +1,13 @@
+{
+  "name": "k8s-final-app",
+  "version": "1.0.0",
+  "description": "Kubernetes Final Projesi - Not Uygulaması",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-app
+  namespace: default
+  labels:
+    app: notes-app
+    version: v1
+spec:
+  replicas: 3                          # 3 pod ile başla
+  selector:
+    matchLabels:
+      app: notes-app
+  strategy:
+    type: RollingUpdate                # Rolling update stratejisi
+    rollingUpdate:
+      maxSurge: 1                      # Aynı anda max 1 fazla pod
+      maxUnavailable: 0                # Hiç pod kapatmadan güncelle (zero-downtime)
+  template:
+    metadata:
+      labels:
+        app: notes-app
+        version: v1
+    spec:
+      containers:
+        - name: notes-app
+          # GCP Artifact Registry imajı - kendi proje adınla değiştir:
+          # gcr.io/PROJE_ADI/notes-app:v1
+          image: gcr.io/YOUR_PROJECT_ID/notes-app:v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: DATA_DIR
+              value: "/data"
+            - name: APP_VERSION
+              value: "v1"
+          # Kaynak sınırları
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          # Volume mount (PVC bağlantısı)
+          volumeMounts:
+            - name: notes-storage
+              mountPath: /data
+          # Liveness probe: Pod sağlıklı mı?
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          # Readiness probe: Trafik almaya hazır mı?
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: notes-storage
+          persistentVolumeClaim:
+            claimName: notes-pvc      # PVC ile bağla
+
+---
+# HorizontalPodAutoscaler: CPU %70'i geçince otomatik scale et
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: notes-app-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notes-app
+  minReplicas: 2                       # Minimum 2 pod
+  maxReplicas: 10                      # Maximum 10 pod
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
