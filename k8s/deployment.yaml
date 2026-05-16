@@ -46,9 +46,7 @@ spec:
               memory: "128Mi"
               cpu: "250m"
           # Volume mount (PVC bağlantısı)
-          volumeMounts:
-            - name: notes-storage
-              mountPath: /data
+       
           # Liveness probe: Pod sağlıklı mı?
           livenessProbe:
             httpGet:
@@ -64,10 +62,8 @@ spec:
               port: 3000
             initialDelaySeconds: 5
             periodSeconds: 10
-      volumes:
-        - name: notes-storage
-          persistentVolumeClaim:
-            claimName: notes-pvc      # PVC ile bağla
+     
+        
 
 ---
 # HorizontalPodAutoscaler: CPU %70'i geçince otomatik scale et
