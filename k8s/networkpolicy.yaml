@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: notes-app-netpol
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: notes-app                   # Bu policy notes-app pod'larına uygulanır
+
+  policyTypes:
+    - Ingress                          # Gelen trafiği kontrol et
+    - Egress                           # Giden trafiği kontrol et
+
+  ingress:
+    # Sadece Service üzerinden gelen trafiğe izin ver (port 3000)
+    - ports:
+        - protocol: TCP
+          port: 3000
+      from:
+        # Aynı namespace'den gelen trafik
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+        # Sadece notes-app labelına sahip pod'lar
+        - podSelector:
+            matchLabels:
+              app: notes-app
+
+  egress:
+    # DNS çözümlemesine izin ver (CoreDNS)
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Pod'ların birbirleriyle konuşmasına izin ver
+    - to:
+        - podSelector:
+            matchLabels:
+              app: notes-app
+    # İnternet çıkışına izin ver (dış API, paket güncellemeleri vb. için)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8              # İç ağdan dışarı çıkışı engelle
+              - 172.16.0.0/12
+              - 192.168.0.0/16
