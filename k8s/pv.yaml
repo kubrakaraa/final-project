@@ -6,17 +6,11 @@ metadata:
     type: local
     app: notes-app
 spec:
-  storageClassName: standard           # GKE'de default storage class
+  storageClassName: standard
   capacity:
     storage: 1Gi
   accessModes:
-    - ReadWriteOnce                    # Tek pod'dan okuma/yazma
-  # GKE için GCE Persistent Disk kullanımı:
-  # gcePersistentDisk:
-  #   pdName: notes-app-disk           # gcloud compute disks create ile oluşturulan disk
-  #   fsType: ext4
-  #
-  # Yerel geliştirme için:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: "/mnt/notes-data"
-  persistentVolumeReclaimPolicy: Retain  # Silinen PVC'den sonra veriyi koru
+    path: "/tmp/notes-data"
