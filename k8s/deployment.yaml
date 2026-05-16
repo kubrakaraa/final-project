@@ -22,6 +22,13 @@ spec:
         app: notes-app
         version: v1
     spec:
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: ["sh", "-c", "chmod 777 /data"]
+          volumeMounts:
+            - name: notes-storage
+              mountPath: /data
       containers:
         - name: notes-app
           image: gcr.io/kubra-final-project/notes-app:v1
@@ -32,7 +39,7 @@ spec:
             - name: PORT
               value: "3000"
             - name: DATA_DIR
-              value: "/data"
+              value: "/tmp"
             - name: APP_VERSION
               value: "v1"
           resources:
