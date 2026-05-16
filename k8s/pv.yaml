@@ -3,14 +3,14 @@ kind: PersistentVolume
 metadata:
   name: notes-pv
   labels:
-    type: local
     app: notes-app
 spec:
-  storageClassName: standard
   capacity:
     storage: 1Gi
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  hostPath:
-    path: "/tmp/notes-data"
+  storageClassName: standard-rwo
+  gcePersistentDisk:
+    pdName: notes-disk
+    fsType: ext4

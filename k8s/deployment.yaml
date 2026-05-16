@@ -7,15 +7,15 @@ metadata:
     app: notes-app
     version: v1
 spec:
-  replicas: 3                          # 3 pod ile başla
+  replicas: 3
   selector:
     matchLabels:
       app: notes-app
   strategy:
-    type: RollingUpdate                # Rolling update stratejisi
+    type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1                      # Aynı anda max 1 fazla pod
-      maxUnavailable: 0                # Hiç pod kapatmadan güncelle (zero-downtime)
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
@@ -24,9 +24,7 @@ spec:
     spec:
       containers:
         - name: notes-app
-          # GCP Artifact Registry imajı - kendi proje adınla değiştir:
-          # gcr.io/PROJE_ADI/notes-app:v1
-          image: gcr.io/YOUR_PROJECT_ID/notes-app:v1
+          image: gcr.io/kubra-final-project/notes-app:v1
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -37,7 +35,6 @@ spec:
               value: "/data"
             - name: APP_VERSION
               value: "v1"
-          # Kaynak sınırları
           resources:
             requests:
               memory: "64Mi"
@@ -45,9 +42,9 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "250m"
-          # Volume mount (PVC bağlantısı)
-       
-          # Liveness probe: Pod sağlıklı mı?
+          volumeMounts:
+            - name: notes-storage
+              mountPath: /data
           livenessProbe:
             httpGet:
               path: /health
@@ -55,18 +52,17 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
             failureThreshold: 3
-          # Readiness probe: Trafik almaya hazır mı?
           readinessProbe:
             httpGet:
               path: /health
               port: 3000
             initialDelaySeconds: 5
             periodSeconds: 10
-     
-        
-
+      volumes:
+        - name: notes-storage
+          persistentVolumeClaim:
+            claimName: notes-pvc
 ---
-# HorizontalPodAutoscaler: CPU %70'i geçince otomatik scale et
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -77,8 +73,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: notes-app
-  minReplicas: 2                       # Minimum 2 pod
-  maxReplicas: 10                      # Maximum 10 pod
+  minReplicas: 2
+  maxReplicas: 10
   metrics:
     - type: Resource
       resource:

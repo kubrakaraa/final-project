@@ -6,9 +6,9 @@ metadata:
   labels:
     app: notes-app
 spec:
-  storageClassName: standard
+  storageClassName: standard-rwo
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi                     # 1 GB disk talep et
+      storage: 1Gi
