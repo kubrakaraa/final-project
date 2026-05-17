@@ -7,7 +7,7 @@ metadata:
     app: notes-app
     version: v1
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: notes-app
@@ -22,16 +22,9 @@ spec:
         app: notes-app
         version: v1
     spec:
-      initContainers:
-        - name: fix-permissions
-          image: busybox
-          command: ["sh", "-c", "chmod 777 /data"]
-          volumeMounts:
-            - name: notes-storage
-              mountPath: /data
       containers:
         - name: notes-app
-          image: gcr.io/kubra-final-project/notes-app:v1
+          image: gcr.io/kubra-final-project/notes-app:v6
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -51,7 +44,7 @@ spec:
               cpu: "250m"
           volumeMounts:
             - name: notes-storage
-              mountPath: /data
+              mountPath: /tmp/data
           livenessProbe:
             httpGet:
               path: /health
@@ -80,7 +73,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: notes-app
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 10
   metrics:
     - type: Resource
