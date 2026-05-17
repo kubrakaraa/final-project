@@ -333,12 +333,6 @@ Kodun GitHub'a push edilmesiyle tetiklenir; imaj build, test, push ve Kubernetes
 
 ---
 
-## Proje Ekibi
 
-| İsim | Görev |
-|------|-------|
-| ... | ... |
-
----
 
 
