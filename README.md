@@ -130,7 +130,7 @@ Cloud Build Pipeline
 # Tetikleyici oluştur (GitHub push → otomatik build)
 gcloud builds triggers create github \
   --repo-name=final-project \
-  --repo-owner=GITHUB_KULLANICI_ADI \
+  --repo-owner=kubrakaraa\
   --branch-pattern="^main$" \
   --build-config=cloudbuild.yaml
 ```
@@ -201,7 +201,7 @@ kubectl apply -f k8s/service.yaml
 kubectl get service notes-app-service
 
 # Tarayıcıda aç
-# http://EXTERNAL_IP
+# http://136.116.93.214
 ```
 
 ---
@@ -222,7 +222,7 @@ kubectl get service notes-app-service
 kubectl logs -l app=notes-app --tail=50
 
 # Pod içine gir
-kubectl exec -it <POD_ADI> -- sh
+kubectl exec -it notes-app-6dfdc4c565-dqx79 -- sh
 
 # PVC durumu
 kubectl get pvc notes-pvc
