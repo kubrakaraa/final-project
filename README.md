@@ -144,7 +144,7 @@ gcloud builds triggers create github \
 ```bash
 # Google Cloud SDK kurulu ve giriş yapılmış olmalı
 gcloud auth login
-gcloud config set project YOUR_PROJECT_ID
+gcloud config set project kubra-final-project
 
 # kubectl kurulu olmalı
 gcloud components install kubectl
@@ -171,10 +171,10 @@ gcloud artifacts repositories create notes-repo \
   --location=us-central1
 
 # İmajı build et
-docker build -t gcr.io/YOUR_PROJECT_ID/notes-app:v1 .
+docker build -t gcr.io/kubra-final-project/notes-app:v1 .
 
 # Push et
-docker push gcr.io/YOUR_PROJECT_ID/notes-app:v1
+docker push gcr.io/kubra-final-project/notes-app:v1
 ```
 
 ### 3. Kubernetes Manifest'lerini Uygula
@@ -184,7 +184,7 @@ docker push gcr.io/YOUR_PROJECT_ID/notes-app:v1
 gcloud container clusters get-credentials notes-cluster --zone us-central1-a
 
 # deployment.yaml içindeki IMAGE'ı güncelle:
-# gcr.io/YOUR_PROJECT_ID/notes-app:v1
+# gcr.io/kubra-final-project/notes-app:v1
 
 # Sırayla uygula
 kubectl apply -f k8s/pv.yaml
@@ -243,12 +243,12 @@ kubectl get hpa notes-app-hpa
 
 ```bash
 # Yeni imaj build et ve push et
-docker build -t gcr.io/YOUR_PROJECT_ID/notes-app:v2 .
-docker push gcr.io/YOUR_PROJECT_ID/notes-app:v2
+docker build -t gcr.io/kubra-final-project/notes-app:v2 .
+docker push gcr.io/kubra-final-project/notes-app:v2
 
 # İmajı güncelle (rolling update otomatik başlar)
 kubectl set image deployment/notes-app \
-  notes-app=gcr.io/YOUR_PROJECT_ID/notes-app:v2
+  notes-app=gcr.io/kubra-final-project/notes-app:v2
 
 # Güncelleme sürecini izle
 kubectl rollout status deployment/notes-app
