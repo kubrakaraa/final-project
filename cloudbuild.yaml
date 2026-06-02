@@ -1,4 +1,4 @@
-:)
+:))
 substitutions:
   _IMAGE_NAME: gcr.io/kubra-final-project/notes-app
   _CLUSTER_NAME: notes-cluster
