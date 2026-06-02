@@ -1,12 +1,6 @@
-# cloudbuild.yaml
-# Google Cloud Build CI/CD Pipeline
-# Tetikleyici: main branch'e push yapıldığında otomatik çalışır
-#
-# Gereksinimler:
-#   gcloud config set project YOUR_PROJECT_ID
 
 substitutions:
-  _IMAGE_NAME: gcr.io/$PROJECT_ID/notes-app
+  _IMAGE_NAME: gcr.io/kubra-final-project/notes-app
   _CLUSTER_NAME: notes-cluster
   _CLUSTER_ZONE: us-central1-a
   _APP_VERSION: v2                     # Her deploy'da manuel artır ya da $SHORT_SHA kullan
@@ -57,7 +51,7 @@ steps:
       - '--zone'
       - '${_CLUSTER_ZONE}'
       - '--project'
-      - '$PROJECT_ID'
+      - 'kubra-final-project'
     waitFor: ['push-image']
 
   # ── Adım 5: PV ve PVC'yi uygula ────────────────────────────────────────────
@@ -132,7 +126,7 @@ images:
   - '${_IMAGE_NAME}:latest'
 
 # Build logları için
-logsBucket: 'gs://$PROJECT_ID-build-logs'
+#logsBucket: 'gs://kubra-final-project-build-logs'
 
 options:
   logging: GCS_ONLY
