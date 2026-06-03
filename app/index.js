@@ -63,13 +63,15 @@ app.delete('/api/notes/:id', (req, res) => {
 });
 
 // Sağlık kontrolü (Kubernetes liveness/readiness probe)
+// Sağlık kontrolü (Dinamik Başlık Entegrasyonu)
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    hostname: require('os').hostname(),
-    version: process.env.APP_VERSION || 'v1',
-    timestamp: new Date().toISOString()
-  });
+    res.json({
+        status: 'OK',
+        appTitle: 'Kubernetes Not Uygulaması (Kübra Kara v2) 🚀', // DEĞİŞTİRMEK İSTEDİĞİN BAŞLIK BURASI!
+        hostname: require('os').hostname(),
+        version: process.env.APP_VERSION || 'v1',
+        timestamp: new Date().toISOString()
+    });
 });
 
 app.listen(PORT, () => {
